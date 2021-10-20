@@ -1,98 +1,72 @@
-import csv
+import entry as en
 
+
+# database class
+# the purpose of this class is to facilitate communication
+# between the main program and the database
 class database:
+    # private variables
     __path = ""
-    __entries = 0
+    __entries: int = 0
 
-    def set_path(self, path):
+    # setters
+    # sets the pat of the database. Only accepts string as its parameter
+    def set_path(self, path: str):
         self.__path = path
 
-    def get_path(self):
-        return self.__path
+    # sets the number of entries. Has an optional int parameter that should be used for testing purposes only.
+    # Private function
+    def __set_entries(self, entries: int = -1):
+        if entries == -1:
+            self.__entries = 0
+            with open(self.__path, "r") as f:
+                for row in f:
+                    self.__entries += 1
+        else:
+            self.__entries = entries
 
-    def set_entries(self):
-        with open(self.__path) as f:
-            for row in f:
-                self.__entries += 1
-
+    # getters
+    # gets the number of entries. Returns an int
     def get_entries(self):
+        self.__set_entries()
         return self.__entries
 
-    def get_entry(self, entry):
+    # testers
+    # test the row for any non int elements. Takes a string as a parameter. Returns a bool
+    # Private function
+    def __row_test(self, row: str):
+        row = row.split(",")
         try:
-            tx = int(entry)
-            with open(self.__path) as f:
-                reader = csv.reader(f)
-                for row in reader:
-                    if int(row[0]) == tx:
-                        return row
+            for i in row:
+                int(i)
+            return True
         except:
-            tx = entry
-            with open(self.__path) as f:
-                reader = csv.reader(f)
-                for row in reader:
-                    if row[1] == tx:
-                        return row
+            return False
 
-    def __generate_entry(self, entry):
-        tx = ""
-        tx += str(entry[0])
-        for i in entry[1::]:
-            tx += ","+str(i)
-        tx += " \n"
-        return tx
-
-    def add_entry(self, entry):
-        tx = self.__generate_entry(entry)
-        with open(self.__path, "a") as f:
-            f.write(tx)
-
-    def test(self):
+    # test the entire file trying to find a non int element. Returns a bool
+    def integrity_test(self):
         i = 1
-        with open(self.__path) as f:
-            reader = csv.reader(f)
-            for row in reader:
-                try:
-                    tx = int(row[0])
-                    for i in range(2,12):
-                        tx = int(row[i])
-                    i+=1
-                except:
-                    print("Problem at line ",i)
+        with open(self.__path, "r") as f:
+            for row in f:
+                if not self.__row_test(row):
+                    print("Problem at row ", i)
                     return False
+                i += 1
         return True
 
-    def modify_entry(self,entry):
-        tx = []
-        with open(self.__path,"r") as f:
-            reader = csv.reader(f)
-            for row in reader:
-                if row[0] == entry[0]:
-                    tx.append(entry)
-                else:
-                    tx.append(row)
+    # I/O functions
+    # replace the entire database with a new one
+    def replace(self, scores):
         with open(self.__path, "w") as f:
-            for row in tx:
-                entry = self.__generate_entry(row)
-                f.write(entry)
+            for row in scores:
+                f.write(row.to_string())
 
-    def remove_entry(self,entry, until = -1):
-        try:
-            tx = int(entry)
-            ty = int(until)
-            temp_scores = []
-            with open(self.__path,"r") as f:
-                for row in f:
-                    row = row.split(",")
-                    if until == -1 and int(row[0]) == entry:
-                        pass
-                    elif until != -1 and (int(row[0]) >= entry and int(row[0]) <= until) or (int(row[0]) <= entry and int(row[0]) >= until):
-                        pass
-                    else:
-                        temp_scores.append(row)
-            with open(self.__path,"w") as f:
-                for row in temp_scores:
-                    tz = self.__generate_entry(row)
-                    f.write(tz)
-        except:
-            print("Insert valid values")
+    # returns the entire database in a matrix. Return a table
+    def get_table(self):
+        table = []
+        with open(self.__path, "r") as f:
+            for row in f:
+                x = en.entry()
+                x.to_entry(row)
+                table.append(x)
+        return table
